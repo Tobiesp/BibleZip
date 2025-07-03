@@ -10,6 +10,8 @@ BIBLES_VAR = None
 BOOKS_VAR = None
 CHAPTER_VAR = None
 VERSE_VAR = None
+VERSE_START_VAR = None
+VERSE_END_VAR = None
 
 
 def main():
@@ -21,6 +23,8 @@ def main():
     BOOKS_VAR = StringVar()
     CHAPTER_VAR = StringVar()
     VERSE_VAR = StringVar()
+    VERSE_START_VAR = StringVar()
+    VERSE_END_VAR = StringVar()
     repository = BibleRepository()
     root.title("ZipScript 2.0")
     
@@ -52,10 +56,14 @@ def main():
             print(f"Failed to load Bible: {selected_bible_name}")
             return
         # Reset BOOK and CHAPTER_VAR when a new Bible is loaded
-        global BOOKS_VAR, CHAPTER_VAR, BOOK
+        global BOOKS_VAR, CHAPTER_VAR, BOOK, VERSE_VAR, VERSE_START_VAR, VERSE_END_VAR
         BOOK = None
         BOOKS_VAR.set(BIBLE.list_books()[0]['name'] if BIBLE and BIBLE.list_books() else "Select a book")
         CHAPTER_VAR.set("Select a chapter")
+        # Reset VERSE_VAR
+        VERSE_VAR.set("Select a verse")
+        VERSE_START_VAR.set("Start")
+        VERSE_END_VAR.set("End")
         # Do something with the loaded bible
         print(f"Loaded Bible: {BIBLE.bible_name} ({BIBLE.edition})")
 
@@ -106,7 +114,7 @@ def main():
         if not BOOK:
             print("No book selected.")
             return
-        global VERSE_VAR
+        global VERSE_VAR, VERSE_START_VAR, VERSE_END_VAR
         chapter_num = int(selected_chapter)
         verses = [str(v) for v in BOOK.chapters[chapter_num].verses.keys()] if chapter_num in BOOK.chapters else []
         # Update the verse dropdown menu
@@ -115,6 +123,18 @@ def main():
         for verse in verses:
             menu.add_command(label=verse, command=lambda value=verse: VERSE_VAR.set(value))
         VERSE_VAR.set(verses[0] if verses else "Select a verse")
+        # Reset verse range variables
+        VERSE_START_VAR.set(verses[0] if verses else "Start")
+        VERSE_END_VAR.set(verses[0] if verses else "End")
+        # Load versus into start and end dropdowns
+        verse_start_menu = verse_start_dropdown['menu']
+        verse_start_menu.delete(0, 'end')
+        verse_end_menu = verse_end_dropdown['menu']
+        verse_end_menu.delete(0, 'end')
+        for verse in verses:
+            verse_start_menu.add_command(label=verse, command=lambda value=verse: verse_start_var.set(value))
+            verse_end_menu.add_command(label=verse, command=lambda value=verse: verse_end_var.set(value))
+        
         print(f"Selected Chapter: {selected_chapter}")
 
     CHAPTER_VAR.trace_add('write', lambda *args: load_chapter(CHAPTER_VAR.get()) if CHAPTER_VAR.get().isdigit() else None)
@@ -137,18 +157,6 @@ def main():
         "Select a verse",
     )
     verse_dropdown.pack(side=LEFT)
-
-    # Verses range selection
-    verse_range_frame = ttk.Frame(root)
-    verse_range_frame.pack(fill="x", padx=20, pady=(10, 0))
-    verse_range_label = ttk.Label(verse_range_frame, text="Verse Range:")
-    verse_range_label.pack(anchor="w")
-    verse_start_var = StringVar()
-    verse_end_var = StringVar()
-    verse_start_dropdown = ttk.OptionMenu(verse_range_frame, verse_start_var, "Start", "")
-    verse_end_dropdown = ttk.OptionMenu(verse_range_frame, verse_end_var, "End", "")
-    verse_start_dropdown.pack(side=LEFT, padx=(0, 5))
-    verse_end_dropdown.pack(side=LEFT, padx=(5, 0))
 
     # Move search field for verse range above the verse text box
     search_frame = ttk.Frame(root)
